@@ -18,6 +18,7 @@ def get_companies(user_id):
 
 
 def add_company(user_id, company):
+    company.strip()
     company = company.upper()
     if not exist(company):
         return False
@@ -31,7 +32,8 @@ def add_company(user_id, company):
             ls = [company]
         else:
             ls = sec.split(" ")
-            ls.append(company)
+            if company not in ls:
+                ls.append(company)
         control_db.set_user(us_id, ls, l_date)
     return True
 
@@ -43,6 +45,7 @@ def clear(user_id):
 
 
 def delete_company(user_id, company):
+    company.strip()
     company = company.upper()
     user = control_db.get_user(user_id)
     if user == -1:
@@ -67,6 +70,8 @@ def get_info_about_companies(user_id, interval=24, start_time=date.today() - tim
 
 
 def already_in(user_id, company):
+    company.strip()
+    company = company.upper()
     return company in get_companies(user_id)
 
 

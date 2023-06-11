@@ -4,6 +4,9 @@ import telebot
 import control_db
 # TODO: перечитать код
 import stock
+import get_company_name
+from telebot.apihelper import ApiTelegramException
+
 import stock_helper
 from constants import *
 from make_plot import make_plot
@@ -11,17 +14,18 @@ from datetime import datetime
 from apscheduler.schedulers.blocking import BlockingScheduler
 from threading import Thread
 
+# control_db.refresh()
+
 
 # for scheduled notifications
 def run_scheduled_task():
     rows = control_db.get_all()
-    print("I am running")
 
     for v in rows:
         user_id = v[0]
         securities = stock.get_companies(user_id)
         last_date = datetime.strptime(v[2], "%y-%m-%d-%H-%M-%S")
-        Text = "Изменение цен акций с последнего момента\n"
+        Text = "Изменение цен акций с последнего уведомления\n"
         for security in securities:
             x = diff.get_difference(security, last_time=last_date, current_time=datetime.today())
             additional = ""
@@ -31,7 +35,10 @@ def run_scheduled_task():
                 additional = f"(-{abs(x[2]):0.2f} {ruble}, ↓{x[3]:0.2f}%)"
             Text += f"{security}  {x[0]} {ruble} ⟶ {x[1]} {ruble} <b>{additional}</b>\n"
         control_db.update_user_date(user_id, datetime.now().strftime("%y-%m-%d-%H-%M-%S"))
-        bot.send_message(user_id, Text, parse_mode="HTML")
+        try:
+            bot.send_message(user_id, Text, parse_mode="HTML")
+        except ApiTelegramException as e:
+            pass
 
 
 control_db.before_start()
@@ -82,7 +89,11 @@ def show_companies(message):
     else:
         Text = list_following_companies_txt + "\n"
         for v in companies:
-            Text += (str(v) + "\n")
+            x = get_company_name.get_name(v)
+            if x != -1:
+                Text += f'{v} ({x})\n'
+            else:
+                Text += f'{v}\n'
     bot.send_message(message.chat.id, text=Text)
 
 
@@ -136,7 +147,7 @@ def second_step_statistics(message):
         bot.send_message(message.chat.id, company_not_exist_txt)
     else:
         make_plot(result['date'], result['price'])
-        send_plot(message, f"График акций для компании {message.text} за {dates[chosen_index]}")
+        send_plot(message, f"График акции {message.text} за {dates[chosen_index]}")
 
 
 def send_plot(message, text):

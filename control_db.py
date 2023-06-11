@@ -1,4 +1,6 @@
 import sqlite3
+
+import stock_helper
 from constants import path_to_db
 from sqlite3 import Error
 
@@ -74,4 +76,26 @@ def get_all():
     sql = "SELECT userid, securities, last_date FROM users"
     cur.execute(sql, ())
     rows = cur.fetchall()
+    return rows
+
+
+def refresh():
+    conn = sqlite3.connect(path_to_db)
+    cur = conn.cursor()
+    conn.commit()
+    sqlite_select_query = """SELECT * FROM users"""
+    cur.execute(sqlite_select_query)
+    rows = cur.fetchall()
+    print(rows)
+    for v in rows:
+        a, b, c = v
+        ls = []
+        if len(b) != 0:
+            ls = b.split(" ")
+        ls = list(set(ls))
+        good = []
+        for x in ls:
+            if stock_helper.exist(x):
+                good.append(x)
+        set_user(a, good, c)
     return rows

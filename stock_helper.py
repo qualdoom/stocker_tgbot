@@ -6,6 +6,9 @@ from datetime import timedelta
 
 def exist(company):
     with requests.Session() as session:
+        x = apimoex.find_security_description(session, company)
+        if len(x) != 0 and 'error' in x[0]:
+            return False
         if len(apimoex.find_security_description(session, company)) == 0:
             return False
     return True
